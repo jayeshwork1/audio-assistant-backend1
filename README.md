@@ -1,19 +1,33 @@
-# Audio Assistant API - Phase 1
+# Audio Assistant API
 
-A comprehensive .NET 8 Web API for the Audio Assistant application, providing authentication, API key management, and a robust foundation for AI-powered conversation features.
+A comprehensive .NET 8 Web API for the Audio Assistant application, providing authentication, API key management, and AI-powered speech-to-text transcription.
 
 ## Features
 
-### Phase 1 Implementation
+### Core Features
 
 - **User Authentication**: Secure registration and login with JWT tokens
 - **Password Security**: BCrypt-based password hashing with salt
 - **API Key Management**: Encrypted storage of external provider API keys (AES-256)
+- **STT Service Abstraction**: Multi-provider transcription with automatic fallback
+  - Groq Whisper (primary, server-configured)
+  - Whisper.cpp (local fallback)
+  - OpenAI Whisper (user-provided API key)
 - **Database**: SQLite with Entity Framework Core
 - **Middleware**: Error handling, rate limiting, and JWT authentication
 - **Logging**: Structured logging with Serilog
 - **API Documentation**: Interactive Swagger/OpenAPI documentation
 - **CORS Support**: Configurable cross-origin resource sharing
+
+### Transcription Features
+
+- **Multi-Provider Support**: Groq, Whisper.cpp, OpenAI
+- **Automatic Fallback**: Seamless provider switching on failure
+- **User Preferences**: Configurable preferred provider
+- **Language Support**: 24+ languages supported
+- **Error Handling**: Graceful degradation and retry logic
+- **Cost Tracking**: Logging of provider usage and costs
+- **Provider API**: Get available providers and set preferences
 
 ## Tech Stack
 
@@ -31,14 +45,25 @@ A comprehensive .NET 8 Web API for the Audio Assistant application, providing au
 AudioAssistant.Api/
 ├── Controllers/          # API endpoints
 │   ├── AuthController.cs
-│   └── ApiKeyController.cs
+│   ├── ApiKeyController.cs
+│   └── TranscriptionController.cs
 ├── Services/            # Business logic
+│   ├── Abstractions/
+│   │   └── ITranscriptionProvider.cs
+│   ├── Providers/
+│   │   ├── GroqWhisperProvider.cs
+│   │   ├── WhisperCppProvider.cs
+│   │   ├── OpenAIWhisperProvider.cs
+│   │   └── ClaudeHaikuSTTProvider.cs
 │   ├── AuthService.cs
-│   └── ApiKeyService.cs
+│   ├── ApiKeyService.cs
+│   └── TranscriptionService.cs
 ├── Models/              # Data models and DTOs
 │   ├── User.cs
 │   ├── ApiKey.cs
-│   ├── Conversation.cs
+│   ├── Transcript.cs
+│   ├── TranscriptionResult.cs
+│   ├── TranscriptionChunk.cs
 │   └── DTOs/
 ├── Data/                # Database context
 │   └── AudioAssistantDbContext.cs
@@ -170,8 +195,8 @@ Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "provider": "groq",
-  "apiKey": "gsk_xxxxxxxxxxxxx"
+  "provider": "OpenAIWhisper",
+  "apiKey": "sk-xxxxxxxxxxxx"
 }
 ```
 
@@ -184,7 +209,7 @@ Authorization: Bearer {token}
 **Response:**
 ```json
 {
-  "providers": ["groq", "claude"]
+  "providers": ["OpenAIWhisper"]
 }
 ```
 
@@ -192,6 +217,61 @@ Authorization: Bearer {token}
 ```http
 DELETE /api/apikey/{provider}
 Authorization: Bearer {token}
+```
+
+### Transcription
+
+All transcription endpoints require authentication.
+
+#### Transcribe Audio
+```http
+POST /api/transcribe
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "audioData": [base64 encoded byte array],
+  "language": "en",
+  "provider": "GroqWhisper",
+  "streaming": false
+}
+```
+
+**Response:**
+```json
+{
+  "id": "guid",
+  "text": "Transcribed text",
+  "language": "en",
+  "confidence": 0.95,
+  "duration": "00:00:01.234",
+  "provider": "GroqWhisper",
+  "tokens": 100,
+  "timestamp": "2024-01-15T10:30:00Z",
+  "usedFallback": false
+}
+```
+
+#### Get Available Providers
+```http
+GET /api/transcribe/providers
+Authorization: Bearer {token}
+```
+
+**Response:**
+```json
+["GroqWhisper", "WhisperCpp", "OpenAIWhisper"]
+```
+
+#### Set Preferred Provider
+```http
+POST /api/transcribe/preferences/provider
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "provider": "GroqWhisper"
+}
 ```
 
 ## Database Schema
@@ -244,6 +324,45 @@ The application uses SQLite with the following main entities:
   }
 }
 ```
+
+### Transcription Providers
+```json
+{
+  "GroqSettings": {
+    "ApiKey": "your-groq-api-key",
+    "Endpoint": "https://api.groq.com/openai/v1"
+  },
+  "WhisperCppSettings": {
+    "Endpoint": "http://localhost:8080",
+    "Model": "base"
+  },
+  "OpenAISettings": {
+    "Endpoint": "https://api.openai.com/v1"
+  },
+  "TranscriptionSettings": {
+    "DefaultProvider": "GroqWhisper",
+    "FallbackChain": ["GroqWhisper", "WhisperCpp", "OpenAIWhisper"],
+    "MaxRetries": 2,
+    "RetryDelaySeconds": 1
+  }
+}
+```
+
+**Provider Setup:**
+
+1. **Groq Whisper** (Primary):
+   - Sign up at https://console.groq.com/
+   - Get API key from settings
+   - Configure in appsettings.json
+
+2. **Whisper.cpp** (Local Fallback):
+   - Install whisper.cpp: https://github.com/ggerganov/whisper.cpp
+   - Run server: `./server -m base.bin -p 8080`
+   - Configure endpoint in appsettings.json
+
+3. **OpenAI Whisper** (User-provided):
+   - Users store their own API keys via `/api/apikey/store`
+   - Provider name: `OpenAIWhisper`
 
 ## Security Best Practices
 

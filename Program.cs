@@ -1,6 +1,8 @@
 using AudioAssistant.Api.Data;
 using AudioAssistant.Api.Middleware;
 using AudioAssistant.Api.Services;
+using AudioAssistant.Api.Services.Abstractions;
+using AudioAssistant.Api.Services.Providers;
 using AudioAssistant.Api.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -64,6 +66,19 @@ builder.Services.AddSingleton(sp => new EncryptionService(encryptionKey));
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+builder.Services.AddScoped<ITranscriptionService, TranscriptionService>();
+
+// Register HttpClient for transcription providers
+builder.Services.AddHttpClient<GroqWhisperProvider>();
+builder.Services.AddHttpClient<WhisperCppProvider>();
+builder.Services.AddHttpClient<OpenAIWhisperProvider>();
+builder.Services.AddHttpClient<ClaudeHaikuSTTProvider>();
+
+// Register transcription providers
+builder.Services.AddScoped<GroqWhisperProvider>();
+builder.Services.AddScoped<WhisperCppProvider>();
+builder.Services.AddScoped<OpenAIWhisperProvider>();
+builder.Services.AddScoped<ClaudeHaikuSTTProvider>();
 
 // Configure CORS
 var corsOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() 

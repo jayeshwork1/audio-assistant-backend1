@@ -22,6 +22,9 @@ public class UserPreferences
     public string PreferredAIProvider { get; set; } = "groq";
 
     [MaxLength(50)]
+    public string PreferredSTTProvider { get; set; } = "GroqWhisper";
+
+    [MaxLength(50)]
     public string PreferredResponseStyle { get; set; } = "concise";
 
     [MaxLength(50)]
