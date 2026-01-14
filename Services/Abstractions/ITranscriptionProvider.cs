@@ -1,3 +1,5 @@
+using AudioAssistant.Api.Models;
+
 namespace AudioAssistant.Api.Services.Abstractions;
 
 /// <summary>

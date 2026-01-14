@@ -5,6 +5,7 @@ using AudioAssistant.Api.Services.Providers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
 
 namespace AudioAssistant.Api.Services;
 
@@ -167,91 +168,227 @@ public class TranscriptionService : ITranscriptionService
         }
     }
 
+    //public async IAsyncEnumerable<TranscriptionChunk> TranscribeStreamingAsync(
+    //    Stream audioStream,
+    //    int userId,
+    //    string language = "en",
+    //    string? preferredProvider = null,
+    //    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    //{
+    //    // Determine provider preference
+    //    var providerPreference = preferredProvider ??
+    //        await GetUserProviderPreference(userId) ??
+    //        _configuration["TranscriptionSettings:DefaultProvider"] ??
+    //        "GroqWhisper";
+
+    //    // Get provider fallback chain
+    //    var providers = await GetProviderFallbackChain(userId, providerPreference);
+
+    //    // Try each provider (streaming typically uses single provider)
+    //    foreach (var provider in providers)
+    //    {
+    //        try
+    //        {
+    //            // Get API key if required
+    //            string? apiKey = null;
+    //            if (provider.RequiresApiKey)
+    //            {
+    //                var (success, retrievedKey, error) = await _apiKeyService.GetApiKeyAsync(userId, provider.ProviderName);
+    //                if (!success || string.IsNullOrEmpty(retrievedKey))
+    //                {
+    //                    _logger.LogWarning("No API key available for {Provider}, trying next provider", provider.ProviderName);
+    //                    continue;
+    //                }
+    //                apiKey = retrievedKey;
+    //            }
+
+    //            var isAvailable = await provider.IsAvailableAsync(apiKey);
+    //            if (!isAvailable)
+    //            {
+    //                _logger.LogWarning("Provider {Provider} is not available for streaming", provider.ProviderName);
+    //                continue;
+    //            }
+
+    //            await foreach (var chunk in provider.TranscribeStreamingAsync(audioStream, apiKey, language, cancellationToken))
+    //            {
+    //                yield return chunk;
+    //            }
+
+    //            yield break; // Success, exit the loop
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            _logger.LogError(ex, "Provider {Provider} streaming failed, trying next", provider.ProviderName);
+    //            continue;
+    //        }
+    //    }
+
+    //    throw new InvalidOperationException("All transcription providers failed for streaming");
+    //}
+
+    //public async IAsyncEnumerable<TranscriptionChunk> TranscribeStreamingAsync(
+    //Stream audioStream,
+    //int userId,
+    //string language = "en",
+    //string? preferredProvider = null,
+    //[EnumeratorCancellation] CancellationToken cancellationToken = default)
+    //{
+    //    // Determine provider preference
+    //    var providerPreference = preferredProvider ??
+    //        await GetUserProviderPreference(userId) ??
+    //        _configuration["TranscriptionSettings:DefaultProvider"] ??
+    //        "GroqWhisper";
+
+    //    // Get provider fallback chain
+    //    var providers = await GetProviderFallbackChain(userId, providerPreference);
+
+    //    // Try each provider (streaming typically uses a single provider)
+    //    foreach (var provider in providers)
+    //    {
+    //        try
+    //        {
+    //            // If the provider requires an API key, try to retrieve it
+    //            string? apiKey = await TryGetApiKeyAsync(userId, provider);
+    //            if (apiKey == null)
+    //            {
+    //                _logger.LogWarning("Skipping provider {Provider} due to missing API key.", provider.ProviderName);
+    //                continue; // Skip to next provider if no API key is found
+    //            }
+
+    //            // Check if the provider is available for streaming
+    //            if (!await provider.IsAvailableAsync(apiKey))
+    //            {
+    //                _logger.LogWarning("Provider {Provider} is not available for streaming.", provider.ProviderName);
+    //                continue;
+    //            }
+
+    //            // Transcribe audio and yield chunks
+    //            await foreach (var chunk in provider.TranscribeStreamingAsync(audioStream, apiKey, language, cancellationToken))
+    //            {
+    //                // Check for cancellation during transcription
+    //                cancellationToken.ThrowIfCancellationRequested();
+
+    //                yield return chunk;
+    //            }
+
+    //            // If transcription is successful, break out of the loop
+    //            yield break;
+    //        }
+    //        catch (OperationCanceledException)
+    //        {
+    //            // Handle cancellation gracefully
+    //            _logger.LogInformation("Transcription operation was cancelled.");
+    //            yield break; // End the operation if cancellation was requested
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            // Log specific error for each provider
+    //            _logger.LogError(ex, "Provider {Provider} streaming failed. Attempting next provider.", provider.ProviderName);
+    //        }
+    //    }
+
+    //    // If all providers failed, throw a detailed exception
+    //    _logger.LogError("All transcription providers failed for streaming.");
+    //    throw new InvalidOperationException("All transcription providers failed for streaming.");
+    //}
+
+    ///// <summary>
+    ///// Helper method to try and get the API key for a given provider.
+    ///// </summary>
+    //private async Task<string?> TryGetApiKeyAsync(int userId, ITranscriptionProvider provider)
+    //{
+    //    if (!provider.RequiresApiKey) return null; // No key needed for this provider
+
+    //    var (success, apiKey, _) = await _apiKeyService.GetApiKeyAsync(userId, provider.ProviderName);
+    //    return success && !string.IsNullOrEmpty(apiKey) ? apiKey : null;
+    //}
+
+
+    //public async Task<List<string>> GetAvailableProvidersAsync()
+    //{
+    //    var providers = new List<ITranscriptionProvider>
+    //    {
+    //        _serviceProvider.GetRequiredService<GroqWhisperProvider>(),
+    //        _serviceProvider.GetRequiredService<WhisperCppProvider>(),
+    //        _serviceProvider.GetRequiredService<OpenAIWhisperProvider>()
+    //    };
+
+    //    var availableProviders = new List<string>();
+
+    //    foreach (var provider in providers)
+    //    {
+    //        try
+    //        {
+    //            if (await provider.IsAvailableAsync())
+    //            {
+    //                availableProviders.Add(provider.ProviderName);
+    //            }
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            _logger.LogWarning(ex, "Error checking availability for provider {Provider}", provider.ProviderName);
+    //        }
+    //    }
+
+    //    return availableProviders;
+    //}
+
+
     public async IAsyncEnumerable<TranscriptionChunk> TranscribeStreamingAsync(
-        Stream audioStream,
-        int userId,
-        string language = "en",
-        string? preferredProvider = null,
-        CancellationToken cancellationToken = default)
+    Stream audioStream,
+    int userId,
+    string language = "en",
+    string? preferredProvider = null,
+    [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // Determine provider preference
-        var providerPreference = preferredProvider ?? 
-            await GetUserProviderPreference(userId) ?? 
-            _configuration["TranscriptionSettings:DefaultProvider"] ?? 
+        var providerPreference = preferredProvider ??
+            await GetUserProviderPreference(userId) ??
+            _configuration["TranscriptionSettings:DefaultProvider"] ??
             "GroqWhisper";
 
-        // Get provider fallback chain
         var providers = await GetProviderFallbackChain(userId, providerPreference);
 
-        // Try each provider (streaming typically uses single provider)
         foreach (var provider in providers)
         {
+            string? apiKey = null;
+
+            if (provider.RequiresApiKey)
+            {
+                var (success, retrievedKey, _) =
+                    await _apiKeyService.GetApiKeyAsync(userId, provider.ProviderName);
+
+                if (!success || string.IsNullOrEmpty(retrievedKey))
+                    continue;
+
+                apiKey = retrievedKey;
+            }
+
+            if (!await provider.IsAvailableAsync(apiKey))
+                continue;
+
+            IAsyncEnumerable<TranscriptionChunk> stream;
+
             try
             {
-                // Get API key if required
-                string? apiKey = null;
-                if (provider.RequiresApiKey)
-                {
-                    var (success, retrievedKey, error) = await _apiKeyService.GetApiKeyAsync(userId, provider.ProviderName);
-                    if (!success || string.IsNullOrEmpty(retrievedKey))
-                    {
-                        _logger.LogWarning("No API key available for {Provider}, trying next provider", provider.ProviderName);
-                        continue;
-                    }
-                    apiKey = retrievedKey;
-                }
-
-                var isAvailable = await provider.IsAvailableAsync(apiKey);
-                if (!isAvailable)
-                {
-                    _logger.LogWarning("Provider {Provider} is not available for streaming", provider.ProviderName);
-                    continue;
-                }
-
-                await foreach (var chunk in provider.TranscribeStreamingAsync(audioStream, apiKey, language, cancellationToken))
-                {
-                    yield return chunk;
-                }
-
-                yield break; // Success, exit the loop
+                //stream = StreamFromProviderAsync(provider, audioStream, apiKey, language, cancellationToken);
+                stream = provider.TranscribeStreamingAsync(audioStream, apiKey, language, cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Provider {Provider} streaming failed, trying next", provider.ProviderName);
+                _logger.LogError(ex, $"Provider {provider.ProviderName} initialization failed, trying next");
                 continue;
             }
+
+            await foreach (var chunk in stream)
+            {
+                yield return chunk;
+            }
+
+            yield break;
         }
 
-        throw new InvalidOperationException("All transcription providers failed for streaming");
-    }
-
-    public async Task<List<string>> GetAvailableProvidersAsync()
-    {
-        var providers = new List<ITranscriptionProvider>
-        {
-            _serviceProvider.GetRequiredService<GroqWhisperProvider>(),
-            _serviceProvider.GetRequiredService<WhisperCppProvider>(),
-            _serviceProvider.GetRequiredService<OpenAIWhisperProvider>()
-        };
-
-        var availableProviders = new List<string>();
-
-        foreach (var provider in providers)
-        {
-            try
-            {
-                if (await provider.IsAvailableAsync())
-                {
-                    availableProviders.Add(provider.ProviderName);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error checking availability for provider {Provider}", provider.ProviderName);
-            }
-        }
-
-        return availableProviders;
+        throw new InvalidOperationException(
+            "All transcription providers failed for streaming");
     }
 
     public async Task SetPreferredProviderAsync(int userId, string provider)
@@ -328,6 +465,17 @@ public class TranscriptionService : ITranscriptionService
         return chain;
     }
 
+    Task<List<string>> GetAvailableProvidersAsync()
+    {
+        var availableProviders = new List<string>
+        {
+            "GroqWhisper",
+            "WhisperCpp",
+            "OpenAIWhisper"
+        };
+        return Task.FromResult(availableProviders);
+    }
+
     private async Task LogUsageAsync(
         int userId,
         string provider,
@@ -368,5 +516,10 @@ public class TranscriptionService : ITranscriptionService
             "WhisperCpp" => null, // Free/local
             _ => null
         };
+    }
+
+    Task<List<string>> ITranscriptionService.GetAvailableProvidersAsync()
+    {
+        return GetAvailableProvidersAsync();
     }
 }

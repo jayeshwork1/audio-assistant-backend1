@@ -59,11 +59,11 @@ public class ClaudeHaikuSTTProvider : ITranscriptionProvider
             "Use Groq, OpenAI, or Whisper.cpp providers instead.");
     }
 
-    public async IAsyncEnumerable<TranscriptionChunk> TranscribeStreamingAsync(
+    public IAsyncEnumerable<TranscriptionChunk> TranscribeStreamingAsync(
         Stream audioStream,
         string? apiKey = null,
         string language = "en",
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
     {
         _logger.LogWarning("Claude Haiku streaming transcription attempted but not supported");
         throw new NotSupportedException(

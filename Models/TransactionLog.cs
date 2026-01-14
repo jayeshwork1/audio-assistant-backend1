@@ -17,16 +17,23 @@ public class TransactionLog
 
     [Required]
     [MaxLength(100)]
-    public string Action { get; set; } = string.Empty;
+    public string TransactionType { get; set; } = string.Empty;
 
     [MaxLength(50)]
     public string? Provider { get; set; }
+
+    [Required]
+    public string RequestData { get; set; } = string.Empty;
+
+    [Required]
+    public string ResponseData { get; set; } = string.Empty;
 
     public int? TokensUsed { get; set; }
 
     [Required]
     [MaxLength(50)]
     public string Status { get; set; } = string.Empty;
+    public decimal? Cost { get; set; }
 
     public string? ErrorMessage { get; set; }
 

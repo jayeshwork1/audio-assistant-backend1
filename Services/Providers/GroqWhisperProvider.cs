@@ -142,7 +142,7 @@ public class GroqWhisperProvider : ITranscriptionProvider
         await audioStream.CopyToAsync(memoryStream, cancellationToken);
         var audioData = memoryStream.ToArray();
 
-        var result = await TranscribeAsync(audioData, language, cancellationToken);
+        var result = await TranscribeAsync(audioData, apiKey, language, cancellationToken);
 
         yield return new TranscriptionChunk
         {

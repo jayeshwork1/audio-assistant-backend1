@@ -1,9 +1,10 @@
-using System.Net.Http.Headers;
-using System.Text.Json;
 using AudioAssistant.Api.Models;
 using AudioAssistant.Api.Services.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 namespace AudioAssistant.Api.Services.Providers;
 
@@ -137,7 +138,7 @@ public class WhisperCppProvider : ITranscriptionProvider
         Stream audioStream,
         string? apiKey = null,
         string language = "en",
-        System.Runtime.CompilerServices.CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Streaming transcription not supported by Whisper.cpp endpoint");
 
@@ -146,7 +147,7 @@ public class WhisperCppProvider : ITranscriptionProvider
         await audioStream.CopyToAsync(memoryStream, cancellationToken);
         var audioData = memoryStream.ToArray();
 
-        var result = await TranscribeAsync(audioData, language, cancellationToken);
+        var result = await TranscribeAsync(audioData, apiKey, language, cancellationToken);
 
         yield return new TranscriptionChunk
         {
