@@ -10,7 +10,8 @@ public interface ITranscriptionProvider
     /// Transcribes audio data to text.
     /// </summary>
     Task<TranscriptionResult> TranscribeAsync(
-        byte[] audioData, 
+        byte[] audioData,
+        string? apiKey = null,
         string language = "en",
         CancellationToken cancellationToken = default);
 
@@ -19,6 +20,7 @@ public interface ITranscriptionProvider
     /// </summary>
     IAsyncEnumerable<TranscriptionChunk> TranscribeStreamingAsync(
         Stream audioStream,
+        string? apiKey = null,
         string language = "en",
         CancellationToken cancellationToken = default);
 
@@ -30,7 +32,7 @@ public interface ITranscriptionProvider
     /// <summary>
     /// Whether this provider is currently available.
     /// </summary>
-    Task<bool> IsAvailableAsync();
+    Task<bool> IsAvailableAsync(string? apiKey = null);
 
     /// <summary>
     /// Supported languages for this provider.
@@ -46,4 +48,9 @@ public interface ITranscriptionProvider
     /// Cost per minute of audio (null = free).
     /// </summary>
     decimal? CostPerMinute { get; }
+
+    /// <summary>
+    /// Whether this provider requires an API key.
+    /// </summary>
+    bool RequiresApiKey { get; }
 }

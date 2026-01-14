@@ -1,0 +1,200 @@
+### Audio Assistant Transcription API Tests
+### Get authentication token first
+
+@baseUrl = https://localhost:5001
+@authToken = YOUR_JWT_TOKEN_HERE
+
+###
+
+# Register a new user
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "TestPassword123!"
+}
+
+> {%
+client.test("User registered successfully", function() {
+  client.assert(response.status === 200, "Response status is 200");
+  client.assert(response.body.token !== undefined, "Token returned");
+  client.global.set("authToken", response.body.token);
+});
+%}
+
+###
+
+# Login to get token
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "TestPassword123!"
+}
+
+> {%
+client.test("Login successful", function() {
+  client.assert(response.status === 200, "Response status is 200");
+  client.assert(response.body.token !== undefined, "Token returned");
+  client.global.set("authToken", response.body.token);
+});
+%}
+
+###
+
+# Store OpenAI API key (for OpenAI provider)
+POST {{baseUrl}}/api/apikey/store
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "provider": "OpenAIWhisper",
+  "apiKey": "sk-your-openai-api-key-here"
+}
+
+###
+
+# Get available transcription providers
+GET {{baseUrl}}/api/transcribe/providers
+Authorization: Bearer {{authToken}}
+
+> {%
+client.test("Providers retrieved", function() {
+  client.assert(response.status === 200, "Response status is 200");
+  client.assert(Array.isArray(response.body), "Response is array");
+  client.log("Available providers:", response.body);
+});
+%}
+
+###
+
+# Set preferred transcription provider
+POST {{baseUrl}}/api/transcribe/preferences/provider
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "provider": "GroqWhisper"
+}
+
+> {%
+client.test("Preference set", function() {
+  client.assert(response.status === 200, "Response status is 200");
+});
+%}
+
+###
+
+# Transcribe audio (with byte array - in production, this would be actual audio data)
+# Note: This is a placeholder - in a real scenario, you'd send actual audio bytes
+POST {{baseUrl}}/api/transcribe
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "audioData": [137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82],
+  "language": "en",
+  "provider": "GroqWhisper",
+  "streaming": false
+}
+
+> {%
+client.test("Transcription completed", function() {
+  client.assert(response.status === 200, "Response status is 200");
+  client.assert(response.body.text !== undefined, "Text returned");
+  client.assert(response.body.provider !== undefined, "Provider returned");
+  client.log("Transcribed text:", response.body.text);
+  client.log("Provider used:", response.body.provider);
+  client.log("Confidence:", response.body.confidence);
+  client.log("Used fallback:", response.body.usedFallback);
+});
+%}
+
+###
+
+# Transcribe without specifying provider (uses user preference)
+POST {{baseUrl}}/api/transcribe
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "audioData": [137, 80, 78, 71, 13, 10, 26, 10],
+  "language": "en",
+  "streaming": false
+}
+
+###
+
+# Test with different language
+POST {{baseUrl}}/api/transcribe
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "audioData": [137, 80, 78, 71, 13, 10, 26, 10],
+  "language": "es",
+  "provider": "GroqWhisper"
+}
+
+###
+
+# Test error case - missing audio data
+POST {{baseUrl}}/api/transcribe
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "language": "en"
+}
+
+> {%
+client.test("Error handled for missing audio", function() {
+  client.assert(response.status === 400, "Response status is 400");
+  client.assert(response.body.error !== undefined, "Error message returned");
+});
+%}
+
+###
+
+# Get configured providers
+GET {{baseUrl}}/api/apikey/providers
+Authorization: Bearer {{authToken}}
+
+> {%
+client.test("Providers retrieved", function() {
+  client.assert(response.status === 200, "Response status is 200");
+  client.log("Configured providers:", response.body.providers);
+});
+%}
+
+###
+
+# Refresh token (when token expires)
+POST {{baseUrl}}/api/auth/refresh-token
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "token": "{{authToken}}"
+}
+
+> {%
+client.test("Token refreshed", function() {
+  client.assert(response.status === 200, "Response status is 200");
+  client.global.set("authToken", response.body.token);
+});
+%}
+
+###
+
+# Delete OpenAI API key
+DELETE {{baseUrl}}/api/apikey/OpenAIWhisper
+Authorization: Bearer {{authToken}}
+
+> {%
+client.test("API key deleted", function() {
+  client.assert(response.status === 200, "Response status is 200");
+});
+%}
